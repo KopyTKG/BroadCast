@@ -1,6 +1,6 @@
 /* eslint-disable eqeqeq */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import Components from '../styles/global';
 import Chat, {Descriptions, Messages} from '../styles/chat';
+import API from '../controller/api.controller';
+import {API_URL} from '@env';
 
 function ChatComp(props: any) {
   const [message, setMessage] = React.useState<string>('');
@@ -20,19 +22,34 @@ function ChatComp(props: any) {
   const options: any = {hour: '2-digit', minute: '2-digit'};
   let viewRef: any = useRef();
   async function sendMessage(data: string) {
+    const api = new API(API_URL);
     setMessage('');
-    setChat([
-      ...chatData,
-      {
-        user: props.user.nickname,
-        sub: props.user.sub,
-        message: data,
-        time: new Date(),
-      },
-    ]);
-
-    console.log(`sending message: ${data}`);
+    const raw = {
+      message: data,
+    };
+    await api.postData(raw, props.token);
+    await getMessages();
   }
+
+  async function getMessages() {
+    const api = new API(API_URL);
+    const messages = await api.getData(props.token);
+    setChat(messages);
+  }
+
+  useEffect(() => {
+    const api = new API(API_URL);
+    console.log(props.token);
+    api
+      .getData(props.token)
+      .catch(e => {
+        console.log(e);
+      })
+      .then(data => {
+        console.log(data[0]);
+        setChat(data);
+      });
+  }, [props.token]);
   return (
     <>
       <KeyboardAvoidingView
@@ -68,9 +85,12 @@ function ChatComp(props: any) {
                   ]}>
                   <Text style={{width: '55%'}}>{item.user}</Text>
                   <Text style={{width: '45%'}}>
-                    {item.time.toLocaleTimeString(undefined, options) +
+                    {new Date(item.createdAt).toLocaleTimeString(
+                      undefined,
+                      options,
+                    ) +
                       '  ' +
-                      item.time.toLocaleDateString()}
+                      new Date(item.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
               </View>

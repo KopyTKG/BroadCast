@@ -6,8 +6,15 @@ import MainLayout from './layouts/loggedIn.layout';
 import LoginLayout from './layouts/login.layout';
 function Routes() {
   const [loggedIn, setLoggin] = useState<boolean>();
-  const {authorize, clearSession, user, isLoading, hasValidCredentials} =
-    useAuth0();
+  const [token, setToken] = useState<string>();
+  const {
+    authorize,
+    clearSession,
+    getCredentials,
+    user,
+    isLoading,
+    hasValidCredentials,
+  } = useAuth0();
 
   const onLogin = async () => {
     await authorize({}, {});
@@ -33,7 +40,6 @@ function Routes() {
         }
       });
   }
-
   useEffect(() => {
     hasValidCredentials()
       .catch(e => {
@@ -43,11 +49,18 @@ function Routes() {
       .then(credentials => {
         if (credentials) {
           setLoggin(true);
+          getCredentials().then(credential => {
+            if (credential) {
+              setToken(credential.idToken);
+            } else {
+              setLoggin(false);
+            }
+          });
         } else {
           setLoggin(false);
         }
       });
-  }, [loggedIn, hasValidCredentials]);
+  }, [loggedIn, hasValidCredentials, getCredentials]);
 
   if (isLoading) {
     return (
@@ -64,6 +77,7 @@ function Routes() {
         <MainLayout
           logout={onLogout}
           user={user ? user : {name: '', picture: ''}}
+          token={token}
         />
       )}
     </>

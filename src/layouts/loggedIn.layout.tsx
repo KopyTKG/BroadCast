@@ -25,7 +25,7 @@ function MainLayout(props: any) {
           </Text>
         </Pressable>
       </View>
-      <ChatComp user={props.user} />
+      <ChatComp user={props.user} token={props.token} />
     </SafeAreaView>
   );
 }
