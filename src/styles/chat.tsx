@@ -19,6 +19,12 @@ const Chat = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 15,
   },
+  system: {
+    textAlign: 'center',
+    color: Colors.darkGreen,
+    margin: 5,
+    marginBottom: 15,
+  },
 });
 
 const Messages = StyleSheet.create({

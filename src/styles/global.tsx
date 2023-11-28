@@ -92,7 +92,7 @@ const Components = StyleSheet.create({
     width: Dimensions.get('screen').width - 20,
     minHeight: '80%',
     height: 'auto',
-    maxHeight: '82%',
+    maxHeight: Dimensions.get('screen').height - 300,
 
     backgroundColor: Colors.lightBlack,
 

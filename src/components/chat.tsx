@@ -1,6 +1,6 @@
 /* eslint-disable eqeqeq */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -16,22 +16,56 @@ function ChatComp(props: any) {
   const [message, setMessage] = React.useState<string>('');
 
   const [chatData, setChat] = useState<any>([]);
+  const ws = useRef<WebSocket>();
+  useEffect(() => {
+    ws.current = new WebSocket('ws://10.25.0.25:8080');
+    ws.current.onopen = () => {
+      const data = {
+        type: 'joined',
+        id: props.user.sub,
+        name: props.user.nickname,
+      };
+      ws.current?.send(JSON.stringify(data));
+    };
+
+    return () => {
+      ws.current?.close();
+    };
+  }, [props.user.nickname, props.user.sub]);
+
+  useEffect(() => {
+    if (!ws.current) {
+      return;
+    }
+    ws.current.onmessage = event => {
+      const data = JSON.parse(event.data);
+      setChat([...chatData, data]);
+    };
+  });
 
   const options: any = {hour: '2-digit', minute: '2-digit'};
   let viewRef: any = useRef();
   async function sendMessage(data: string) {
-    setMessage('');
     setChat([
       ...chatData,
       {
-        user: props.user.nickname,
-        sub: props.user.sub,
+        type: 'message',
+        id: props.user.sub,
+        name: props.user.nickname,
         message: data,
-        time: new Date(),
+        date: new Date(),
       },
     ]);
 
-    console.log(`sending message: ${data}`);
+    const msg = {
+      type: 'message',
+      id: props.user.sub,
+      name: props.user.nickname,
+      message: data,
+      date: new Date(),
+    };
+    ws.current?.send(JSON.stringify(msg));
+    setMessage('');
   }
   return (
     <>
@@ -50,31 +84,42 @@ function ChatComp(props: any) {
               No messages found
             </Text>
           ) : (
-            chatData.map((item: any, index: number) => (
-              <View key={index}>
-                <Text
-                  style={[
-                    Chat.message,
-                    props.user.sub == item.sub ? Messages.user : Messages.other,
-                  ]}>
-                  {item.message}
-                </Text>
-                <View
-                  style={[
-                    Chat.desc,
-                    props.user.sub == item.sub
-                      ? Descriptions.left
-                      : Descriptions.right,
-                  ]}>
-                  <Text style={{width: '55%'}}>{item.user}</Text>
-                  <Text style={{width: '45%'}}>
-                    {item.time.toLocaleTimeString(undefined, options) +
-                      '  ' +
-                      item.time.toLocaleDateString()}
+            chatData.map((item: any, index: number) =>
+              item.type == 'message' ? (
+                <View key={index}>
+                  <Text
+                    style={[
+                      Chat.message,
+                      props.user.sub == item.id
+                        ? Messages.user
+                        : Messages.other,
+                    ]}>
+                    {item.message}
                   </Text>
+                  <View
+                    style={[
+                      Chat.desc,
+                      props.user.sub == item.id
+                        ? Descriptions.left
+                        : Descriptions.right,
+                    ]}>
+                    <Text style={{width: '55%'}}>{item.name}</Text>
+                    <Text style={{width: '45%'}}>
+                      {new Date(item.date).toLocaleTimeString(
+                        undefined,
+                        options,
+                      ) +
+                        ' ' +
+                        new Date(item.date).toLocaleDateString()}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ))
+              ) : item.type == 'joined' || item.type == 'left' ? (
+                <Text key={index} style={[Chat.system]}>
+                  User {item.name} {item.type} the chat room.
+                </Text>
+              ) : null,
+            )
           )}
         </ScrollView>
         <TextInput
