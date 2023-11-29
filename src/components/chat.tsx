@@ -18,7 +18,7 @@ function ChatComp(props: any) {
   const [chatData, setChat] = useState<any>([]);
   const ws = useRef<WebSocket>();
   useEffect(() => {
-    ws.current = new WebSocket('ws://10.25.0.25:8080');
+    ws.current = new WebSocket('ws://192.168.107.187:8080/ws');
     ws.current.onopen = () => {
       const data = {
         type: 'joined',
